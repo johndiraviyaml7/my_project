@@ -1,0 +1,6 @@
+com\edge\viewer\service\ViewerDicomService.class
+com\edge\viewer\ui\MainWindow$1.class
+com\edge\viewer\mqtt\ViewerMqttService.class
+com\edge\viewer\ui\MainWindow.class
+com\edge\viewer\config\ViewerConfig.class
+com\edge\viewer\EdgeConnectViewerApplication.class
