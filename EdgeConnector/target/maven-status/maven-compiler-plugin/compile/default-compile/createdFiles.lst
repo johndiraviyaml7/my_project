@@ -1,7 +1,0 @@
-com\edge\connector\config\WebSocketConfig.class
-com\edge\connector\service\DicomUploadService.class
-com\edge\connector\EdgeConnectorApplication.class
-com\edge\connector\config\MqttConfig.class
-com\edge\connector\controller\EdgeConnectorController.class
-com\edge\connector\mqtt\MqttService.class
-com\edge\connector\config\HttpClientConfig.class
