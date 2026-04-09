@@ -1,0 +1,55 @@
+.page { display: flex; flex-direction: column; gap: 20px; }
+
+.breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.breadLink { color: var(--primary); background: none; border: none; cursor: pointer; padding: 0; }
+.breadLink:hover { text-decoration: underline; }
+.sep { color: var(--text-muted); }
+.breadCurrent { color: var(--text-secondary); font-weight: 500; }
+
+.header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.title { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+.subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+.headerActions { display: flex; gap: 10px; }
+
+.search {
+  padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
+  font-size: 13px; width: 240px; background: white;
+  outline: none; transition: border 0.15s;
+}
+.search:focus { border-color: var(--primary); }
+
+.statsRow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+.statCard {
+  background: white; border-radius: 10px; padding: 16px 20px;
+  box-shadow: var(--shadow); text-align: center;
+}
+.statValue { font-size: 26px; font-weight: 700; color: var(--primary); }
+.statLabel { font-size: 12px; color: var(--text-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.tableCard {
+  background: white; border-radius: 12px; box-shadow: var(--shadow);
+  overflow: hidden; border: 1px solid var(--border);
+}
+.table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table th {
+  background: #f8fafc; padding: 11px 14px; text-align: left;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 600;
+}
+.table td { padding: 12px 14px; border-bottom: 1px solid var(--border-light); }
+.row { cursor: pointer; transition: background 0.1s; }
+.row:hover { background: #f8fafc; }
+.row:last-child td { border-bottom: none; }
+
+.subjectId { font-family: monospace; font-size: 12px; font-weight: 600; color: var(--primary); }
+.count { font-weight: 600; color: var(--text-primary); }
+.badge { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.deidId { font-size: 11px; color: var(--text-muted); }
+.openBtn {
+  padding: 5px 12px; border-radius: 6px; background: var(--primary);
+  color: white; font-size: 12px; font-weight: 600; transition: opacity 0.15s;
+}
+.openBtn:hover { opacity: 0.85; }
+
+.empty { padding: 40px; text-align: center; color: var(--text-muted); font-size: 14px; }

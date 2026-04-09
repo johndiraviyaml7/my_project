@@ -1,0 +1,12 @@
+# QuantixMed DICOM Parser v2 — requirements
+# pydicom for DICOM I/O, Pillow+numpy for PNG rendering of raw + deid previews,
+# Orthanc/OHIF used for the full interactive viewer.
+pydicom>=3.0.1
+numpy>=2.0.0
+Pillow>=10.4.0
+psycopg2-binary>=2.9.10
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.6
+python-multipart>=0.0.9
+pydantic>=2.8.0
+requests>=2.32.0

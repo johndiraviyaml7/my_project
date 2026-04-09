@@ -1,0 +1,10 @@
+⚠️  This folder's `docker-compose.yml` is the OLD orthanc-only stack and
+    is preserved here only for reference.
+
+    Use the root `docker-compose.yml` instead — it starts Orthanc, OHIF,
+    Spring Boot, the React frontend, the DICOM parser, and Postgres in
+    one unified stack, which is what makes the OHIF viewer actually
+    render images.
+
+    The `ohif-app-config.js` in this folder IS still used — the root
+    compose bind-mounts it into the OHIF container.
