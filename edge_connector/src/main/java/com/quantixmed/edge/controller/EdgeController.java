@@ -6,6 +6,7 @@ import com.quantixmed.edge.dto.EdgeDtos.RegisterResult;
 import com.quantixmed.edge.dto.EdgeDtos.UploadResult;
 import com.quantixmed.edge.mqtt.EdgeMqttPublisher;
 import com.quantixmed.edge.service.PasClient;
+import com.quantixmed.edge.service.RegistrationStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -24,16 +25,35 @@ public class EdgeController {
 
     private final PasClient pasClient;
     private final EdgeMqttPublisher mqtt;
+    private final RegistrationStore registrationStore;
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResult> register(@RequestBody RegisterForm form) {
         log.info("Register request from UI: {}", form);
         RegisterResult result = pasClient.register(form);
         if (result.isSuccess()) {
-            // After registration succeeds, start the MQTT heartbeat loop
+            // Persist the form so we survive restarts, then start MQTT
+            registrationStore.save(form);
             mqtt.connectAs(form.getSerialNumber());
         }
         return ResponseEntity.ok(result);
+    }
+
+    /** Returns the saved registration (if any), so the Swing UI can
+     *  pre-populate its form fields on startup. */
+    @GetMapping("/saved-registration")
+    public ResponseEntity<RegisterForm> savedRegistration() {
+        RegisterForm saved = registrationStore.load();
+        if (saved == null) return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(saved);
+    }
+
+    /** Clears the persisted registration and disconnects MQTT. */
+    @PostMapping("/unregister")
+    public ResponseEntity<String> unregister() {
+        registrationStore.clear();
+        mqtt.shutdown();
+        return ResponseEntity.ok("cleared");
     }
 
     @GetMapping("/status")

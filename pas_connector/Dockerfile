@@ -9,9 +9,11 @@ RUN mvn -B -q dependency:go-offline
 COPY src ./src
 COPY certs ./certs
 
-# ── Convert PEMs into a PKCS12 keystore + JKS truststore with a
-#    known password (changeit).  This avoids shipping binary
-#    keystores whose passwords have to be guessed. ────────────────
+# Convert PEMs into:
+#   server.p12     — server identity (used by both Tomcat HTTPS and Moquette)
+#   truststore.jks — root CA in a JKS (used by both Tomcat HTTPS and Moquette)
+# Both files have password "changeit".  We use a hand-built SslContext in
+# MqttBrokerBean so the same two files work for both Tomcat and Moquette.
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
  && rm -rf /var/lib/apt/lists/* \
  && openssl pkcs12 -export \
@@ -28,6 +30,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl \
         -keystore certs/truststore.jks \
         -storepass changeit \
         -noprompt \
+ && echo "─── server.p12 ───" \
+ && keytool -list -keystore certs/server.p12 -storetype PKCS12 -storepass changeit \
+ && echo "─── truststore.jks ───" \
+ && keytool -list -keystore certs/truststore.jks -storepass changeit \
  && ls -la certs/
 
 RUN mvn -B -q -DskipTests package
@@ -44,7 +50,7 @@ COPY --from=build /build/certs /app/certs
 
 RUN mkdir -p /app/uploads
 
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75"
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75 -Djavax.net.debug=ssl:handshake:verbose"
 
 EXPOSE 8443 8444 8883 1883
 

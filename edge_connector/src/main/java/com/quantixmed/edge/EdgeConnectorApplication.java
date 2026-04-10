@@ -34,7 +34,15 @@ public class EdgeConnectorApplication {
             wantUi = true;
         }
 
-        ConfigurableApplicationContext ctx = SpringApplication.run(EdgeConnectorApplication.class, args);
+        // Spring Boot defaults java.awt.headless=true, which would make
+        // every Swing call throw HeadlessException.  Force it off BEFORE
+        // SpringApplication.run() so the AWT toolkit initialises in
+        // headful mode for the rest of the JVM's lifetime.
+        System.setProperty("java.awt.headless", "false");
+
+        SpringApplication app = new SpringApplication(EdgeConnectorApplication.class);
+        app.setHeadless(false);
+        ConfigurableApplicationContext ctx = app.run(args);
 
         if (wantUi) {
             SwingUtilities.invokeLater(() -> new EdgeMainWindow(ctx).setVisible(true));

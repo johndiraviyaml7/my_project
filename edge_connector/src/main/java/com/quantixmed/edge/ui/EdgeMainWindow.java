@@ -70,6 +70,31 @@ public class EdgeMainWindow extends JFrame {
         setSize(720, 560);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        // Replace the default Java cup icon with the QuantixMed DICOM icon.
+        // The image is bundled in the jar under src/main/resources and loaded
+        // via the classpath.  If it's missing or corrupt we swallow the error
+        // and keep the default icon rather than crashing.
+        try {
+            java.net.URL iconUrl = getClass().getResource("/dicom_icon.png");
+            if (iconUrl != null) {
+                Image icon = javax.imageio.ImageIO.read(iconUrl);
+                if (icon != null) {
+                    setIconImage(icon);
+                    // On macOS the JFrame icon is ignored in favour of the
+                    // Dock icon, which has to be set via Taskbar API.  Try
+                    // it — if unsupported (Linux/Windows) the exception is
+                    // swallowed and we keep the JFrame icon.
+                    try {
+                        java.awt.Taskbar.getTaskbar().setIconImage(icon);
+                    } catch (Throwable ignored) { /* non-macOS or unsupported */ }
+                }
+            }
+        } catch (Exception e) {
+            // Icon load failure is not fatal — keep going with default cup
+            System.err.println("Could not load dicom_icon.png: " + e.getMessage());
+        }
+
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override public void windowClosed(java.awt.event.WindowEvent e) {
                 poller.shutdownNow();
@@ -86,7 +111,45 @@ public class EdgeMainWindow extends JFrame {
 
         setContentPane(tabs);
 
+        // Load the previously-saved registration (if any) and pre-populate
+        // the form fields.  The server-side StartupAutoRegister will have
+        // already kicked off an auto-re-register by the time we get here,
+        // so the Connected tab should light up within a few seconds too.
+        loadSavedRegistration();
+
         poller.scheduleAtFixedRate(this::refreshStatus, 1, 2, TimeUnit.SECONDS);
+    }
+
+    private void loadSavedRegistration() {
+        new SwingWorker<JsonNode, Void>() {
+            @Override protected JsonNode doInBackground() throws Exception {
+                HttpURLConnection c = (HttpURLConnection) new URL(BASE + "/edge/saved-registration").openConnection();
+                c.setConnectTimeout(2000);
+                c.setReadTimeout(2000);
+                int code = c.getResponseCode();
+                if (code == 204) return null;  // no saved registration
+                if (code != 200) return null;
+                return json.readTree(c.getInputStream());
+            }
+            @Override protected void done() {
+                try {
+                    JsonNode node = get();
+                    if (node == null) return;
+                    serialField.setText(node.path("serialNumber").asText(""));
+                    deviceField.setText(node.path("deviceName").asText(""));
+                    modalityField.setText(node.path("modality").asText(""));
+                    instituteField.setText(node.path("instituteName").asText(""));
+                    manufacturerField.setText(node.path("manufacturer").asText(""));
+                    modelField.setText(node.path("model").asText(""));
+                    aeTitleField.setText(node.path("aeTitle").asText(""));
+                    uploadModality.setText(node.path("modality").asText("CT"));
+                    appendLog(regLog, "Loaded previous registration for " + node.path("serialNumber").asText());
+                    appendLog(regLog, "Auto-reconnecting in background — watch the Connected tab");
+                } catch (Exception e) {
+                    // quietly ignore — first-run case
+                }
+            }
+        }.execute();
     }
 
     // ── Register tab ──────────────────────────────────────────────────────
@@ -258,6 +321,8 @@ public class EdgeMainWindow extends JFrame {
                 c.setRequestMethod("POST");
                 c.setDoOutput(true);
                 c.setChunkedStreamingMode(64 * 1024);
+                c.setConnectTimeout(10_000);
+                c.setReadTimeout(0);   // 0 = infinite, big files take a while
                 c.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
                 try (OutputStream out = c.getOutputStream()) {
                     out.write(("--" + boundary + "\r\n").getBytes());
@@ -266,7 +331,15 @@ public class EdgeMainWindow extends JFrame {
                     out.write(("--" + boundary + "\r\n").getBytes());
                     out.write(("Content-Disposition: form-data; name=\"file\"; filename=\"" + f.getName() + "\"\r\n").getBytes());
                     out.write("Content-Type: application/zip\r\n\r\n".getBytes());
-                    out.write(Files.readAllBytes(f.toPath()));
+                    // Stream the file in 1 MB chunks instead of slurping it
+                    // into memory.  Files.newInputStream uses Windows file
+                    // sharing flags that allow antivirus and other readers
+                    // to coexist with us — Files.readAllBytes did not.
+                    try (java.io.InputStream fin = Files.newInputStream(f.toPath())) {
+                        byte[] buf = new byte[1024 * 1024];
+                        int n;
+                        while ((n = fin.read(buf)) > 0) out.write(buf, 0, n);
+                    }
                     out.write(("\r\n--" + boundary + "--\r\n").getBytes());
                 }
                 int code = c.getResponseCode();

@@ -5,4 +5,6 @@ E:\Dicom\platform_v5\edge_connector\src\main\java\com\quantixmed\edge\ui\EdgeMai
 E:\Dicom\platform_v5\edge_connector\src\main\java\com\quantixmed\edge\service\PasClient.java
 E:\Dicom\platform_v5\edge_connector\src\main\java\com\quantixmed\edge\dto\EdgeDtos.java
 E:\Dicom\platform_v5\edge_connector\src\main\java\com\quantixmed\edge\service\TlsContextFactory.java
+E:\Dicom\platform_v5\edge_connector\src\main\java\com\quantixmed\edge\service\StartupAutoRegister.java
+E:\Dicom\platform_v5\edge_connector\src\main\java\com\quantixmed\edge\service\RegistrationStore.java
 E:\Dicom\platform_v5\edge_connector\src\main\java\com\quantixmed\edge\service\KeystoreInitializer.java

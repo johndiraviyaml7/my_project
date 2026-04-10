@@ -52,6 +52,7 @@ public class PasClient {
             URL url = new URL(pasBaseUrl + "/api/pas/register");
             HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
             conn.setSSLSocketFactory(ssl().getSocketFactory());
+            conn.setHostnameVerifier((hostname, session) -> true);  // self-signed dev cert, no SAN
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
             conn.setRequestProperty("Content-Type", "application/json");
@@ -93,6 +94,7 @@ public class PasClient {
             URL url = new URL(pasBaseUrl + "/api/pas/upload/" + serialNumber);
             HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
             conn.setSSLSocketFactory(ssl().getSocketFactory());
+            conn.setHostnameVerifier((hostname, session) -> true);  // self-signed dev cert, no SAN
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
             conn.setChunkedStreamingMode(64 * 1024);
@@ -100,8 +102,8 @@ public class PasClient {
             conn.setConnectTimeout(10_000);
             conn.setReadTimeout(600_000);
 
-            byte[] fileBytes = Files.readAllBytes(zipPath);
             String filename = zipPath.getFileName().toString();
+            long fileSize = Files.size(zipPath);
 
             try (DataOutputStream out = new DataOutputStream(conn.getOutputStream())) {
                 // modality part
@@ -110,11 +112,15 @@ public class PasClient {
                     out.writeBytes("Content-Disposition: form-data; name=\"modality\"\r\n\r\n");
                     out.writeBytes(modality + "\r\n");
                 }
-                // file part
+                // file part — streamed in 1 MB chunks (no full-file slurp)
                 out.writeBytes("--" + boundary + "\r\n");
                 out.writeBytes("Content-Disposition: form-data; name=\"file\"; filename=\"" + filename + "\"\r\n");
                 out.writeBytes("Content-Type: application/zip\r\n\r\n");
-                out.write(fileBytes);
+                try (InputStream fin = Files.newInputStream(zipPath)) {
+                    byte[] buf = new byte[1024 * 1024];
+                    int n;
+                    while ((n = fin.read(buf)) > 0) out.write(buf, 0, n);
+                }
                 out.writeBytes("\r\n--" + boundary + "--\r\n");
             }
 
@@ -126,7 +132,7 @@ public class PasClient {
                 return UploadResult.builder()
                         .success(true)
                         .filename(filename)
-                        .bytes(node.path("bytes").asLong(fileBytes.length))
+                        .bytes(node.path("bytes").asLong(fileSize))
                         .message("OK")
                         .build();
             } else {
