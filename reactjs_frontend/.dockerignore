@@ -1,9 +1,0 @@
-node_modules
-dist
-build
-.git
-.idea
-.vscode
-npm-debug.log*
-.env.local
-.env.*.local
